@@ -6,6 +6,43 @@
 <title>TIAGO | TREINOS</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ── COLE SUAS CREDENCIAIS FIREBASE AQUI ──────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlGI-vT5_GGrFbM1ZCTr50NOAPtVfNKRk",
+    authDomain: "treinott-61ef6.firebaseapp.com",
+    databaseURL: "https://treinott-61ef6-default-rtdb.firebaseio.com",
+    projectId: "treinott-61ef6",
+    storageBucket: "treinott-61ef6.firebasestorage.app",
+    messagingSenderId: "202923069245",
+    appId: "1:202923069245:web:699d8c2825f8514d807f54"
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const DB_PATH = 'tiago/treinos';
+
+  window._fbReady = false;
+  window._fbDB = db;
+  window._fbRef = ref;
+  window._fbSet = set;
+  window._fbGet = get;
+  window._fbChild = child;
+  window._fbPath = DB_PATH;
+  window._fbReady = true;
+
+  // Dispara init após Firebase estar pronto
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._appInit) window._appInit();
+  });
+  if (document.readyState !== 'loading') {
+    setTimeout(() => { if (window._appInit) window._appInit(); }, 100);
+  }
+</script>
 <style>
   :root {
     --bg: #0a0a0a;
@@ -153,7 +190,7 @@
 
 <div class="header">
   <div class="header-title">TIAGO TREINOS</div>
-  <div class="header-date" id="headerDate"></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="header-date" id="headerDate"></div><div id="syncStatus" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">⬤ LOCAL</div></div>
 </div>
 
 <nav class="nav">
@@ -269,11 +306,63 @@ const TREINOS = {
 const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
+let _cache = null;
+
+function setSyncStatus(status) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (status === 'synced') { el.textContent = '⬤ SINCRONIZADO'; el.style.color = '#4ade80'; }
+  else if (status === 'syncing') { el.textContent = '⬤ SINCRONIZANDO...'; el.style.color = '#facc15'; }
+  else if (status === 'error') { el.textContent = '⬤ ERRO SYNC'; el.style.color = '#f87171'; }
+  else { el.textContent = '⬤ LOCAL'; el.style.color = 'var(--muted)'; }
+}
+
+async function loadFromFirebase() {
+  if (!window._fbReady) return null;
+  try {
+    const snapshot = await window._fbGet(window._fbChild(window._fbRef(window._fbDB), window._fbPath));
+    if (snapshot.exists()) return snapshot.val();
+    return [];
+  } catch(e) { console.error('Firebase read error', e); return null; }
+}
+
+async function saveToFirebase(data) {
+  if (!window._fbReady) return false;
+  try {
+    setSyncStatus('syncing');
+    await window._fbSet(window._fbRef(window._fbDB, window._fbPath), data);
+    setSyncStatus('synced');
+    return true;
+  } catch(e) {
+    console.error('Firebase write error', e);
+    setSyncStatus('error');
+    return false;
+  }
+}
+
 function getData() {
+  if (_cache !== null) return _cache;
   try { return JSON.parse(localStorage.getItem('tiago_treinos') || '[]'); } catch(e) { return []; }
 }
-function saveData(data) {
+
+async function saveData(data) {
+  _cache = data;
   localStorage.setItem('tiago_treinos', JSON.stringify(data));
+  await saveToFirebase(data);
+}
+
+async function syncFromCloud() {
+  if (!window._fbReady) { setSyncStatus('local'); return; }
+  setSyncStatus('syncing');
+  const cloudData = await loadFromFirebase();
+  if (cloudData !== null) {
+    _cache = cloudData;
+    localStorage.setItem('tiago_treinos', JSON.stringify(cloudData));
+    setSyncStatus('synced');
+    renderDashboard();
+  } else {
+    setSyncStatus('error');
+  }
 }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
@@ -292,7 +381,10 @@ function init() {
   renderDashboard();
   buildExerciseBlocks(currentTreino);
   buildEvoSelector();
+  syncFromCloud();
 }
+
+window._appInit = init;
 
 // ─── VIEWS ────────────────────────────────────────────────────────────────────
 function switchView(v) {
@@ -479,7 +571,7 @@ function delSet(exId, num) {
 }
 
 // ─── SAVE TREINO ──────────────────────────────────────────────────────────────
-function saveTreino() {
+async function saveTreino() {
   const exercises = TREINOS[currentTreino];
   const result = [];
   let hasAnyData = false;
@@ -517,7 +609,7 @@ function saveTreino() {
 
   const data = getData();
   data.push(entry);
-  saveData(data);
+  await saveData(data);
 
   showToast('✓ TREINO SALVO!');
   document.getElementById('obsArea').value = '';
@@ -724,7 +816,11 @@ const yAxis = () => ({ grid: { color: '#1e1e1e' }, ticks: { color: '#555', font:
 const xAxis = () => ({ grid: { display: false }, ticks: { color: '#555', font: { family: 'DM Mono', size: 10 } }, border: { display: false } });
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
-init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 </body>
 </html>
