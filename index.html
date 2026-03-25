@@ -115,6 +115,9 @@
   .exercise-name { font-weight: 600; font-size: 15px; }
   .exercise-tag { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
   .add-set-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--accent); cursor: pointer; transition: all 0.2s; }
+  .last-session { padding: 7px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: center; }
+  .last-session-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: #3a3a3a; margin-right: 2px; }
+  .last-session-pill { font-family: 'DM Mono', monospace; font-size: 10px; color: #444; white-space: nowrap; }
   .add-set-btn:active { background: var(--accent); color: #000; }
 
   .sets-header { display: grid; grid-template-columns: 28px 1fr 1fr 80px 32px; gap: 6px; padding: 8px 16px; background: var(--bg3); }
@@ -190,6 +193,35 @@
   .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
   .empty-state p { color: var(--muted); font-size: 14px; }
 
+  /* ATIVIDADES */
+  .atividades-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+  .atividades-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .atividades-header-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .add-ativ-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--accent); cursor: pointer; }
+  .ativ-item { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .ativ-item:last-child { border-bottom: none; }
+  .ativ-name { font-size: 14px; font-weight: 500; }
+  .ativ-meta { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .ativ-del { background: none; border: none; color: #333; font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .ativ-del:active { color: #f87171; }
+
+  /* MODAL ATIVIDADE */
+  .ativ-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+  .ativ-modal-overlay.open { display: flex; }
+  .ativ-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; padding: 24px 20px 48px; }
+  .ativ-modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; }
+  .ativ-type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .ativ-type-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .ativ-type-btn .ativ-emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+  .ativ-type-btn .ativ-label { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .ativ-type-btn.selected { border-color: var(--accent); background: #1a1e00; }
+  .ativ-type-btn.selected .ativ-label { color: var(--accent); }
+  .ativ-field { margin-bottom: 14px; }
+  .ativ-field label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; display: block; margin-bottom: 6px; }
+  .ativ-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; }
+  .ativ-input:focus { outline: none; border-color: var(--accent); }
+  .ativ-save-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; cursor: pointer; margin-top: 4px; }
+
   /* RPE color coding */
   .rpe-6, .rpe-7 { color: var(--rpe-low) !important; }
   .rpe-8 { color: var(--rpe-mid) !important; }
@@ -232,6 +264,43 @@
   <div class="recent-list">
     <div class="recent-header">ÚLTIMOS TREINOS</div>
     <div id="recentList"></div>
+  </div>
+  <div class="atividades-section">
+    <div class="atividades-header">
+      <span class="atividades-header-label">OUTRAS ATIVIDADES</span>
+      <button class="add-ativ-btn" onclick="openAtivModal()">+ ADICIONAR</button>
+    </div>
+    <div id="atividadesList"></div>
+  </div>
+</div>
+
+<!-- MODAL ATIVIDADE -->
+<div class="ativ-modal-overlay" id="ativModalOverlay" onclick="closeAtivModal(event)">
+  <div class="ativ-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div class="ativ-modal-title">NOVA ATIVIDADE</div>
+      <button style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;" onclick="closeAtivModal()">✕</button>
+    </div>
+    <div class="ativ-type-grid">
+      <div class="ativ-type-btn selected" onclick="selectAtivType('futebol', this)">
+        <span class="ativ-emoji">⚽</span><span class="ativ-label">Futebol</span>
+      </div>
+      <div class="ativ-type-btn" onclick="selectAtivType('tennis', this)">
+        <span class="ativ-emoji">🎾</span><span class="ativ-label">Tennis</span>
+      </div>
+      <div class="ativ-type-btn" onclick="selectAtivType('caminhada', this)">
+        <span class="ativ-emoji">🚶</span><span class="ativ-label">Caminhada</span>
+      </div>
+    </div>
+    <div class="ativ-field">
+      <label>DATA</label>
+      <input type="date" class="ativ-input" id="ativDate">
+    </div>
+    <div class="ativ-field">
+      <label>DURAÇÃO (minutos)</label>
+      <input type="number" class="ativ-input" id="ativDuration" placeholder="60" min="1" max="600" inputmode="numeric">
+    </div>
+    <button class="ativ-save-btn" onclick="saveAtividade()">✓ SALVAR</button>
   </div>
 </div>
 
@@ -370,6 +439,30 @@ async function saveData(data) {
   await saveToFirebase(data);
 }
 
+// ─── ATIVIDADES STORAGE ───────────────────────────────────────────────────────
+function getAtividades() {
+  try { return JSON.parse(localStorage.getItem('tiago_atividades') || '[]'); } catch(e) { return []; }
+}
+
+async function saveAtividades(list) {
+  localStorage.setItem('tiago_atividades', JSON.stringify(list));
+  if (!window._fbReady) return;
+  try {
+    await window._fbSet(window._fbRef(window._fbDB, 'tiago/atividades'), list);
+  } catch(e) { console.error('Firebase ativ error', e); }
+}
+
+async function syncAtividadesFromCloud() {
+  if (!window._fbReady) return;
+  try {
+    const snap = await window._fbGet(window._fbChild(window._fbRef(window._fbDB), 'tiago/atividades'));
+    if (snap.exists()) {
+      const data = snap.val();
+      localStorage.setItem('tiago_atividades', JSON.stringify(data));
+    }
+  } catch(e) { console.error('Firebase ativ read error', e); }
+}
+
 async function syncFromCloud() {
   if (!window._fbReady) { setSyncStatus('local'); return; }
   setSyncStatus('syncing');
@@ -378,10 +471,11 @@ async function syncFromCloud() {
     _cache = cloudData;
     localStorage.setItem('tiago_treinos', JSON.stringify(cloudData));
     setSyncStatus('synced');
-    renderDashboard();
   } else {
     setSyncStatus('error');
   }
+  await syncAtividadesFromCloud();
+  renderDashboard();
 }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
@@ -421,6 +515,7 @@ function renderDashboard() {
   renderWeekDays(data);
   renderStreak(data);
   renderRecentList(data);
+  renderAtividades();
 }
 
 function getWeekBounds(offset = 0) {
@@ -438,7 +533,8 @@ function getWeekBounds(offset = 0) {
 function renderWeekDays(data) {
   const { monday, sunday } = getWeekBounds();
   const now = new Date();
-  const trainedDates = new Set(data.map(t => t.date));
+  const ativDates = new Set(getAtividades().map(a => a.date));
+  const trainedDates = new Set([...data.map(t => t.date), ...ativDates]);
   const container = document.getElementById('weekDays');
   container.innerHTML = '';
   let weekCount = 0, weekSets = 0, weekRpeSum = 0, weekRpeCount = 0;
@@ -474,10 +570,14 @@ function renderWeekDays(data) {
 
 function renderStreak(data) {
   const { monday, sunday } = getWeekBounds(0);
-  const count = new Set(data.filter(t => {
+  const ativDates = getAtividades()
+    .filter(a => { const d = new Date(a.date + 'T12:00:00'); return d >= monday && d <= sunday; })
+    .map(a => a.date);
+  const allDates = new Set([...data.filter(t => {
     const d = new Date(t.date + 'T12:00:00');
     return d >= monday && d <= sunday;
-  }).map(t => t.date)).size;
+  }).map(t => t.date), ...ativDates]);
+  const count = allDates.size;
   document.getElementById('streakNum').textContent = count;
   const msgs = ['Comece hoje!', 'Bom início de semana', 'Evoluindo!', 'Semana consistente 💪', 'Semana forte 🔥', 'Dedicação total 💀', 'Atleta! 🏆', 'Máximo! 🏆'];
   document.getElementById('streakSub').textContent = msgs[Math.min(count, msgs.length - 1)];
@@ -519,6 +619,21 @@ function selectTreino(name) {
   buildExerciseBlocks(name);
 }
 
+function getLastSessionData(exId, treinoName) {
+  const data = getData();
+  // Find the most recent completed session for this treino division (excluding today)
+  const today = toDateStr(new Date());
+  const sorted = [...data]
+    .filter(t => t.divisao === treinoName && t.date !== today)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (sorted.length === 0) return null;
+  const lastSession = sorted[0];
+  const ex = lastSession.exercises.find(e => e.id === exId);
+  if (!ex || !ex.sets || ex.sets.length === 0) return null;
+  // Return all sets with their carga and rpe
+  return { date: lastSession.date, sets: ex.sets };
+}
+
 function buildExerciseBlocks(treinoName) {
   const exercises = TREINOS[treinoName];
   const container = document.getElementById('exerciseBlocks');
@@ -528,6 +643,16 @@ function buildExerciseBlocks(treinoName) {
 function buildExerciseHTML(ex) {
   const timed = ex.timed || false;
   const repsLabel = timed ? 'SEG' : 'REPS';
+  const last = getLastSessionData(ex.id, currentTreino);
+  let lastHtml = '';
+  if (last) {
+    const d = new Date(last.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    const lastSet = last.sets[last.sets.length - 1];
+    const carga = lastSet.carga ? lastSet.carga + 'kg' : '—';
+    const rpe = lastSet.rpe ? lastSet.rpe : '—';
+    const pills = `<span class="last-session-pill">(${carga} | ${rpe})</span>`;
+    lastHtml = `<div class="last-session"><span class="last-session-label">Último (${d})</span>${pills}</div>`;
+  }
   return `<div class="exercise-block" id="block_${ex.id}">
     <div class="exercise-header">
       <div>
@@ -536,6 +661,7 @@ function buildExerciseHTML(ex) {
       </div>
       <button class="add-set-btn" onclick="addSet('${ex.id}', ${timed})">+ SÉRIE</button>
     </div>
+    ${lastHtml}
     <div class="sets-header">
       <span>#</span><span>CARGA (kg)</span><span>${repsLabel}</span><span>RPE</span><span></span>
     </div>
@@ -691,16 +817,22 @@ function renderWeekFreq() {
 
 function renderFreqChart() {
   const data = getData();
-  const labels = [], counts = [];
+  const atividades = getAtividades();
+  const labels = [], gymCounts = [], ativCounts = [];
   for (let w = 7; w >= 0; w--) {
     const { monday, sunday } = getWeekBounds(-w);
-    const count = new Set(data.filter(t => {
+    const gymCount = new Set(data.filter(t => {
       const d = new Date(t.date + 'T12:00:00');
       return d >= monday && d <= sunday;
     }).map(t => t.date)).size;
+    const ativCount = new Set(atividades.filter(a => {
+      const d = new Date(a.date + 'T12:00:00');
+      return d >= monday && d <= sunday;
+    }).map(a => a.date)).size;
     const lbl = w === 0 ? 'Atual' : `-${w}s`;
     labels.push(lbl);
-    counts.push(count);
+    gymCounts.push(gymCount);
+    ativCounts.push(ativCount);
   }
 
   if (freqChartInst) freqChartInst.destroy();
@@ -709,9 +841,38 @@ function renderFreqChart() {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: counts, backgroundColor: counts.map(c => c >= 4 ? '#4ade80' : c >= 3 ? '#e8ff47' : '#ff6b35'), borderRadius: 6, borderSkipped: false }]
+      datasets: [
+        {
+          label: 'Academia',
+          data: gymCounts,
+          backgroundColor: gymCounts.map(c => c >= 4 ? '#4ade80' : c >= 3 ? '#4ade80' : '#ff6b35'),
+          borderRadius: 4,
+          borderSkipped: false,
+          stack: 'week'
+        },
+        {
+          label: 'Atividade',
+          data: ativCounts,
+          backgroundColor: '#e8ff47',
+          borderRadius: 4,
+          borderSkipped: false,
+          stack: 'week'
+        }
+      ]
     },
-    options: { ...chartOpts(), scales: { y: { ...yAxis(), max: 7, ticks: { stepSize: 1, color: '#555', font: { family: 'DM Mono', size: 10 } } }, x: { ...xAxis() } } }
+    options: {
+      ...chartOpts(),
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#555', font: { family: 'DM Mono', size: 9 }, boxWidth: 10, boxHeight: 10, padding: 12 }
+        }
+      },
+      scales: {
+        y: { ...yAxis(), max: 7, stacked: true, ticks: { stepSize: 1, color: '#555', font: { family: 'DM Mono', size: 10 } } },
+        x: { ...xAxis(), stacked: true }
+      }
+    }
   });
 }
 
@@ -777,6 +938,84 @@ function renderPRs() {
         <div class="pr-sub">${r.date}</div>
       </div>
     </div>`).join(''));
+}
+
+// ─── ATIVIDADES ───────────────────────────────────────────────────────────────
+const ATIV_CONFIG = {
+  futebol:   { label: 'Futebol',   emoji: '⚽' },
+  tennis:    { label: 'Tennis',    emoji: '🎾' },
+  caminhada: { label: 'Caminhada', emoji: '🚶' },
+};
+
+let _selectedAtivType = 'futebol';
+
+function openAtivModal() {
+  const today = toDateStr(new Date());
+  document.getElementById('ativDate').value = today;
+  document.getElementById('ativDuration').value = '';
+  _selectedAtivType = 'futebol';
+  document.querySelectorAll('.ativ-type-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.ativ-type-btn')[0].classList.add('selected');
+  document.getElementById('ativModalOverlay').classList.add('open');
+}
+
+function closeAtivModal(e) {
+  if (!e || e.target === document.getElementById('ativModalOverlay') || e.currentTarget?.tagName === 'BUTTON')
+    document.getElementById('ativModalOverlay').classList.remove('open');
+}
+
+function selectAtivType(type, el) {
+  _selectedAtivType = type;
+  document.querySelectorAll('.ativ-type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function saveAtividade() {
+  const date = document.getElementById('ativDate').value;
+  const duration = parseInt(document.getElementById('ativDuration').value);
+  if (!date) { showToast('Selecione a data!'); return; }
+  if (!duration || duration < 1) { showToast('Informe a duração!'); return; }
+  const cfg = ATIV_CONFIG[_selectedAtivType];
+  const entry = {
+    id: Date.now().toString(),
+    type: _selectedAtivType,
+    label: cfg.label,
+    emoji: cfg.emoji,
+    date,
+    duration
+  };
+  const list = getAtividades();
+  list.push(entry);
+  await saveAtividades(list);
+  document.getElementById('ativModalOverlay').classList.remove('open');
+  renderDashboard();
+  showToast('✓ ATIVIDADE SALVA!');
+}
+
+async function deleteAtividade(id) {
+  const list = getAtividades().filter(a => a.id !== id);
+  await saveAtividades(list);
+  renderDashboard();
+  showToast('✓ ATIVIDADE REMOVIDA');
+}
+
+function renderAtividades() {
+  const list = getAtividades().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  const container = document.getElementById('atividadesList');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:20px;"><p>Nenhuma atividade registrada.</p></div>';
+    return;
+  }
+  container.innerHTML = list.map(a => {
+    const d = new Date(a.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', weekday: 'short' });
+    return `<div class="ativ-item">
+      <div>
+        <div class="ativ-name">${a.emoji} ${a.label}</div>
+        <div class="ativ-meta">${d} · ${a.duration} min</div>
+      </div>
+      <button class="ativ-del" onclick="deleteAtividade('${a.id}')">✕</button>
+    </div>`;
+  }).join('');
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
